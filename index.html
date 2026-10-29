@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>体重記録</title>
   <link rel="stylesheet" href="style.css">
+  <!-- ホーム画面に追加するための設定（PWA） -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2a6fdb">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 </head>
 <body>
   <header class="app-header">
@@ -100,5 +104,11 @@
   <script src="logic.js"></script>
   <script src="sheets.js"></script>
   <script src="app.js"></script>
+  <!-- サービスワーカーの登録（対応しているブラウザだけ） -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js");
+    }
+  </script>
 </body>
 </html>
