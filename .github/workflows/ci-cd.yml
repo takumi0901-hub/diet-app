@@ -21,12 +21,15 @@ jobs:
           test -f app.js
           test -f logic.js
           test -f sheets.js
+          test -f manifest.json
+          test -f sw.js
 
       - name: Check JavaScript syntax
         run: |
           node --check app.js
           node --check logic.js
           node --check sheets.js
+          node --check sw.js
 
   deploy:
     name: deploy
@@ -50,7 +53,8 @@ jobs:
       - name: Prepare site files
         run: |
           mkdir _site
-          cp index.html style.css app.js logic.js sheets.js _site/
+          cp index.html style.css app.js logic.js sheets.js manifest.json sw.js _site/
+          cp -r icons _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
