@@ -156,6 +156,23 @@ textarea {
   resize: vertical;
 }
 
+/* 日付の入力欄（iPhone の Safari で右にはみ出さず、ほかの入力欄と同じ大きさにする） */
+input[type="date"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; /* iOS の日付入力が持つ、最小の幅を打ち消す */
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: calc(1.5em + 22px); /* ほかの入力欄と同じ高さ（文字の高さ + 上下の余白 + 枠） */
+}
+
+/* iOS Safari で、日付の文字が中央寄せになるのと、未入力のとき高さが縮むのを防ぐ */
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+
 input:focus, textarea:focus, button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
