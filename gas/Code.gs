@@ -104,6 +104,83 @@ function deleteRecord_(date) {
   return true;
 }
 
+const SUMMARY_SHEET_NAME = "summary";
+const SUMMARY_HEADERS = ["date", "weight", "avg7"];
+const AVG_DAYS = 7;
+
+// "YYYY-MM-DD" を、1970-01-01 からの日数に変換する（タイムゾーンの影響を受けない）
+function dayNumber_(dateStr) {
+  const p = String(dateStr).split("-");
+  return Math.round(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2])) / 86400000);
+}
+
+// グラフ用のシートを取得する。なければ作る
+function getSummarySheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SUMMARY_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SUMMARY_SHEET_NAME);
+  }
+  return sheet;
+}
+
+// 記録から「日付・体重・直近7日間の平均」を計算して、summary シートに書き直す
+function rebuildSummary_() {
+  const records = listRecords_()
+    .filter(function (r) { return r.weight !== null; })
+    .sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+  const days = records.map(function (r) { return dayNumber_(r.date); });
+
+  const rows = records.map(function (r, i) {
+    let sum = 0;
+    let count = 0;
+    for (let j = 0; j <= i; j++) {
+      if (days[j] >= days[i] - (AVG_DAYS - 1)) {
+        sum += records[j].weight;
+        count++;
+      }
+    }
+    return [r.date, r.weight, Math.round((sum / count) * 100) / 100];
+  });
+
+  const sheet = getSummarySheet_();
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, SUMMARY_HEADERS.length).setValues([SUMMARY_HEADERS]);
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, SUMMARY_HEADERS.length).setValues(rows);
+  }
+}
+
+// エディタから手動で実行する用（最初の 1 回と、シートを手で直したあと）
+function rebuildSummary() {
+  rebuildSummary_();
+}
+
+// 動作確認用：架空のデータ（2030年の日付）を入れて、summary を作る
+function testSummary() {
+  [["2030-01-01", 50.0], ["2030-01-02", 51.0], ["2030-01-10", 60.0]].forEach(function (d) {
+    upsertRecord_({ date: d[0], weight: d[1], meal: "テスト", exercise: "テスト" });
+  });
+  rebuildSummary_();
+}
+
+// 動作確認用：上のテストデータを消して、summary を作り直す
+function cleanupTest() {
+  ["2030-01-01", "2030-01-02", "2030-01-10"].forEach(function (d) {
+    deleteRecord_(d);
+  });
+  rebuildSummary_();
+}
+
+// summary の更新に失敗しても、記録の保存・削除そのものは、成功として返す
+function refreshSummary_() {
+  try {
+    rebuildSummary_();
+  } catch (err) {
+    console.error("summary の更新に失敗しました: " + err);
+  }
+}
+
 // URL をブラウザで開いたときの、動作確認用（データは返さない）
 function doGet() {
   return json_({ ok: true, message: "diet-app API" });
@@ -120,8 +197,16 @@ function doPost(e) {
     lock.waitLock(10000);
     try {
       if (req.action === "list") return json_({ ok: true, records: listRecords_() });
-      if (req.action === "upsert") return json_({ ok: true, record: upsertRecord_(req.record) });
-      if (req.action === "delete") return json_({ ok: true, deleted: deleteRecord_(req.date) });
+      if (req.action === "upsert") {
+        const record = upsertRecord_(req.record);
+        refreshSummary_();
+        return json_({ ok: true, record: record });
+      }
+      if (req.action === "delete") {
+        const deleted = deleteRecord_(req.date);
+        refreshSummary_();
+        return json_({ ok: true, deleted: deleted });
+      }
       return json_({ ok: false, error: "unknown action" });
     } finally {
       lock.releaseLock();
