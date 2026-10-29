@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>体重記録</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>体重記録</h1>
+    <p id="sync-status" class="sync-status" data-state="off" role="status" aria-live="polite">連携なし</p>
+    <nav class="tabs">
+      <button type="button" class="tab" data-view="view-record" aria-current="page">記録</button>
+      <button type="button" class="tab" data-view="view-settings">設定</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 記録画面 -->
+    <section id="view-record" class="view">
+      <form id="record-form" class="card" novalidate>
+        <h2>記録する</h2>
+        <label class="field">
+          <span>日付</span>
+          <input type="date" id="input-date" required>
+        </label>
+        <p id="overwrite-note" class="note" hidden>この日付の記録はすでにあります（保存すると上書きされます）</p>
+        <label class="field">
+          <span>体重（kg）</span>
+          <input type="number" id="input-weight" inputmode="decimal" step="0.1" min="0" max="500" placeholder="例: 60.5">
+        </label>
+        <label class="field">
+          <span>食事のメモ</span>
+          <textarea id="input-meal" rows="2"></textarea>
+        </label>
+        <label class="field">
+          <span>運動のメモ</span>
+          <textarea id="input-exercise" rows="2"></textarea>
+        </label>
+        <button type="submit" class="primary">保存</button>
+        <p id="form-message" class="message" role="alert"></p>
+      </form>
+
+      <div class="summary">
+        <div class="card stat">
+          <p class="stat-label">直近7日間の平均</p>
+          <p id="stat-average" class="stat-value">—</p>
+          <p id="stat-average-sub" class="stat-sub"></p>
+        </div>
+        <div class="card stat">
+          <p class="stat-label">前日との差</p>
+          <p id="stat-diff" class="stat-value">—</p>
+          <p id="stat-diff-sub" class="stat-sub"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>体重の推移</h2>
+        <div class="chart-box">
+          <canvas id="weight-chart" aria-label="体重の推移の折れ線グラフ" role="img"></canvas>
+        </div>
+        <p id="chart-message" class="note" hidden></p>
+      </div>
+
+      <div class="card">
+        <div class="list-header">
+          <h2>一覧</h2>
+          <button type="button" id="reload-button">読み込み</button>
+        </div>
+        <p id="empty-message" class="note" hidden>まだ記録がありません</p>
+        <ul id="record-list" class="record-list"></ul>
+      </div>
+    </section>
+
+    <!-- 設定画面 -->
+    <section id="view-settings" class="view" hidden>
+      <form id="settings-form" class="card" novalidate>
+        <h2>スプレッドシート連携</h2>
+        <label class="field">
+          <span>連携URL</span>
+          <input type="url" id="input-url" autocomplete="off" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>合言葉</span>
+          <input type="password" id="input-token" autocomplete="off">
+        </label>
+        <div class="button-row">
+          <button type="submit" class="primary">保存</button>
+          <button type="button" id="clear-settings-button">連携を解除</button>
+        </div>
+        <p id="settings-message" class="message" role="alert"></p>
+        <p class="note">入力した値は、このブラウザの中（localStorage）にだけ保存されます。</p>
+      </form>
+    </section>
+  </main>
+
+  <!-- グラフ用ライブラリ（読み込めなくても、記録と一覧は使える） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="logic.js"></script>
+  <script src="sheets.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
